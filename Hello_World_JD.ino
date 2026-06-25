@@ -1,4 +1,5 @@
 //Quentin Wilson
+//Jasmine Horton
 #define newLED 13
 
 void setup() {
