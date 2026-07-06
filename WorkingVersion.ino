@@ -150,8 +150,8 @@ char keys[ROWS][COLS] = {
   {'7','8','9','C'},
   {'*','0','#','D'}
 };
-byte rowPins[ROWS] = {27, 31, 30, 28};
-byte colPins[COLS] = {24, 29, 26, 25};
+byte rowPins[ROWS] = {31, 24, 25, 27};   // Row1, Row2, Row3, Row4
+byte colPins[COLS] = {26, 28, 29, 30};   // Col1, Col2, Col3, Col4
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 
 // ── Game state ────────────────────────────────────────────────────
