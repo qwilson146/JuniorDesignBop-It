@@ -61,6 +61,7 @@ unsigned long lastBeepTime = 0;
 #define WIN_DEMO   3
 #define DEMO_CODE  "AAAA"
 int winThreshold = WIN_NORMAL;
+bool demoMode = false;   // tracks current mode so AAAA can toggle it
 
 // ── RGB LED ───────────────────────────────────────────────────────
 #define LED_RED 13
@@ -337,8 +338,60 @@ void checkDemoMode() {
     delay(30);
   }
 
-  if (strcmp(buf, DEMO_CODE) == 0) winThreshold = WIN_DEMO;
-  else                             winThreshold = WIN_NORMAL;
+  if (strcmp(buf, DEMO_CODE) == 0) {
+    demoMode = true;
+    winThreshold = WIN_DEMO;
+  } else {
+    demoMode = false;
+    winThreshold = WIN_NORMAL;
+  }
+}
+
+// ── In-game demo/real mode toggle (D key) ─────────────────────────
+void drawTogglePrompt(const char* buf) {
+  dispCode.clearDisplay();
+  dispCode.setTextColor(SSD1306_WHITE);
+  dispCode.setTextSize(1);
+  dispCode.setCursor(0, 0);
+  dispCode.println("Enter code + #");
+  dispCode.println("to toggle mode");
+  dispCode.setCursor(0, 20);
+  dispCode.print("Currently: ");
+  dispCode.println(demoMode ? "DEMO" : "REAL");
+  dispCode.setTextSize(2);
+  dispCode.setCursor(0, 40);
+  dispCode.println(buf);
+  dispCode.display();
+}
+
+void toggleDemoPrompt() {
+  char buf[5] = "";
+  byte len = 0;
+  drawTogglePrompt(buf);
+
+  while (true) {
+    char key = keypad.getKey();
+    if (key) {
+      if (key == '#') {
+        break;
+      } else if (key == '*') {
+        len = 0; buf[0] = '\0';
+      } else if (len < 4) {
+        buf[len++] = key;
+        buf[len] = '\0';
+      }
+      drawTogglePrompt(buf);
+    }
+    delay(30);
+  }
+
+  // AAAA flips whichever mode we're currently in; anything else = no change
+  if (strcmp(buf, DEMO_CODE) == 0) {
+    demoMode = !demoMode;
+    winThreshold = demoMode ? WIN_DEMO : WIN_NORMAL;
+  }
+
+  restartGame();
 }
 
 void showCurrentChallenge() {
@@ -559,7 +612,9 @@ void loop() {
   // ── Keypad ──
   char key = keypad.getKey();
   if (key) {
-    if (key == '#') {
+    if (key == 'D') {
+      toggleDemoPrompt();
+    } else if (key == '#') {
       restartGame();
     } else if (currentChallenge == CHALLENGE_KEYPAD) {
       if (key == '*') {
