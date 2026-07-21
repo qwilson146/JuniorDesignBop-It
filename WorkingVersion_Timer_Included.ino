@@ -134,7 +134,7 @@ void releaseCoils() {
 
 void rotatePlus90() {
   for (int i = 0; i < STEPS_PER_90DEG; i++) {
-    currentStep = (currentStep + 1) % 8;
+    currentStep = (currentStep + 7) % 8;
     stepMotor(currentStep);
   }
   releaseCoils();
@@ -142,7 +142,7 @@ void rotatePlus90() {
 
 void rotateMinus90() {
   for (int i = 0; i < STEPS_PER_90DEG; i++) {
-    currentStep = (currentStep + 7) % 8;
+    currentStep = (currentStep + 1) % 8;
     stepMotor(currentStep);
   }
   releaseCoils();
@@ -183,7 +183,9 @@ void generateSecretCode() {
   }
 }
 
-// ── Crack it sequence: Right 90, Left 180, Right 270 ─────────────
+// ── Crack it sequence: Right ~90, Left ~180, Right ~270 ──────────
+#define CRACK_JITTER 25   // +/- degrees of randomness around each mark
+
 struct CrackStep { int degrees; bool isLeft; };
 CrackStep crackSeq[3] = {
   { 90,  false },  // Right
@@ -192,6 +194,15 @@ CrackStep crackSeq[3] = {
 };
 int crackIndex  = 0;
 int crackTarget = 0;
+
+void generateCrackSeq() {
+  const int  base[3] = { 90, 180, 270 };
+  const bool left[3] = { false, true, false };  // R, L, R pattern stays fixed
+  for (int i = 0; i < 3; i++) {
+    crackSeq[i].degrees = base[i] + random(-CRACK_JITTER, CRACK_JITTER + 1);
+    crackSeq[i].isLeft  = left[i];
+  }
+}
 
 void loadCrackStep(int idx) {
   encoderPos = 0;
@@ -473,6 +484,7 @@ void pickChallenge() {
     generateSecretCode();
     myDFPlayer.play(TRACK_HACK);
   } else if (currentChallenge == CHALLENGE_ENCODER) {
+    generateCrackSeq();
     crackIndex = 0;
     loadCrackStep(0);
     myDFPlayer.play(TRACK_CRACK);
@@ -634,7 +646,7 @@ void loop() {
     }
   }
 
-  // ── Rotary encoder (Right 90, Left 180, Right 270) ──
+  // ── Rotary encoder (Right ~90, Left ~180, Right ~270) ──
   if (currentChallenge == CHALLENGE_ENCODER) {
     int current = encoderPos;
     if (current != lastEncoderPos) {
